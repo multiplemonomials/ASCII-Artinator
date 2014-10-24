@@ -16,12 +16,6 @@ template <typename T> int sgn(T val) {
     return (T(0) < val) - (val < T(0));
 }
 
-//gets the match score between the gray values of two pixels
-score_t computeScore(int16_t sourceValue, int16_t bitmapValue)
-{
-	int difference = std::abs(((int16_t)sourceValue) - ((int16_t)bitmapValue));
-	return 128 - difference;
-}
 
 int main()
 {
@@ -53,6 +47,8 @@ int main()
 
 	//obtain rasterizer from factory
 	auto typer = FreeTyper::init(blockHeight);
+
+	//fill the hash map with ascii characters and their greyscale values
 
 	//init variable to hold the object
 	CharImage outputImage(sourceImage.get_height() / blockHeight, sourceImage.get_width() / blockHeight);
