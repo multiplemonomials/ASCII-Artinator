@@ -2,16 +2,22 @@
 #include <memory>
 #include <thread>
 #include <cmath>
+#include <map>
+
+#include <Windows.h>
 
 #include "FreeTyper.h"
 #include "CharImage.h"
 
 #include <png++/png.hpp>
 
-unsigned int blockHeight = 16;
+#define ENABLE_DEBUG_OUT
+
+unsigned int blockHeight = 8;
 
 typedef long long score_t;
 
+//thanks StackOverflow
 template <typename T> int sgn(T val) {
     return (T(0) < val) - (val < T(0));
 }
@@ -35,20 +41,41 @@ int main()
 	//verify image - make sure dimensions are multiples of blockHeight
 	if(sourceImage.get_width() % blockHeight)
 	{
-		std::cerr << "error: the width of the image is not divisible by " << blockHeight << std::endl;
+		std::cerr << "error: the width of the image is not divisible by " << std::dec << blockHeight << std::endl;
 		return 1;
 	}
 
 	if(sourceImage.get_height() % blockHeight)
 	{
-		std::cerr << "error: the height of the image is not divisible by " << blockHeight << std::endl;
+		std::cerr << "error: the height of the image is not divisible by " << std::dec << blockHeight << std::endl;
 		return 1;
 	}
 
 	//obtain rasterizer from factory
 	auto typer = FreeTyper::init(blockHeight);
 
-	//fill the hash map with ascii characters and their greyscale values
+	std::cerr << "Building greyscale to character mapping..." << std::endl;
+
+	//fill a hash map with ascii characters and their greyscale values
+	std::map<BitmapImage::greyscaleType, char16_t> greyscaleToCharacterMap;
+	for(char16_t character = 32; character < 255; ++character)
+	{
+		//render character, or null if not printable
+		auto bitmap = typer->renderCharacter(character);
+
+		//if printable char
+		if(!bitmap->isEmpty())
+		{
+#ifdef ENABLE_DEBUG_OUT
+			std::cout << "Adding char " << std::hex << character << " with a greyscale value of " << std::dec << bitmap->greyscaleValue(blockHeight, blockHeight) << std::endl;
+#endif
+			greyscaleToCharacterMap[bitmap->greyscaleValue(blockHeight, blockHeight)] = character;
+		}
+
+	}
+
+
+	std::cerr << "Translating image..." << std::endl;
 
 	//init variable to hold the object
 	CharImage outputImage(sourceImage.get_height() / blockHeight, sourceImage.get_width() / blockHeight);
@@ -59,93 +86,63 @@ int main()
 		//and each column in each row in the source image...
 		for(unsigned int blockStartX = 0; blockStartX < sourceImage.get_width(); blockStartX += blockHeight)
 		{
-			std::cout << "Processing block (" << blockStartX / blockHeight << ", " << blockStartY / blockHeight << ")" << std::endl;
+#ifdef ENABLE_DEBUG_OUT
+			std::cout << "Processing block (" << std::dec << blockStartX / blockHeight << ", " << blockStartY / blockHeight << ")" << std::endl;
+#endif
 
-			//Will contain best character match for this block
-			std::pair<score_t, char32_t> currentBest(0, ' ');
 
-			//print the block
+			// read the block's pixels into an object
+			BitmapImage blockPixels(sourceImage, blockStartX, blockStartY, blockHeight, blockHeight);
 
-			for(unsigned int row = 0; row < blockHeight; ++row)
+			int imageGreyscaleValue = blockPixels.greyscaleValue();
+
+#ifdef ENABLE_DEBUG_OUT
+			std::cout << "block greyscale value (16 bit):" << std::dec << imageGreyscaleValue << std::endl;
+#endif
+
+			//if there is an exact match, our job is easy
+			if(greyscaleToCharacterMap.find(imageGreyscaleValue) != greyscaleToCharacterMap.end())
 			{
-				for(unsigned int column = 0; column < blockHeight; ++column)
-				{
-					char output = typer->getApproximateGreyscaleCharacter(255 - sourceImage.get_pixel(blockStartX + column, blockStartY + row));
-					std::cout << output << ' ';
-				}
-				std::cout << std::endl;
+#ifdef ENABLE_DEBUG_OUT
+				std::cout << "Found an exact match in char " << std::hex << greyscaleToCharacterMap.at(imageGreyscaleValue) << std::endl;
+#endif
+				//use our best character to the CharImage for this block
+				outputImage.add(blockStartX / blockHeight, blockStartY / blockHeight, greyscaleToCharacterMap.at(imageGreyscaleValue));
 			}
-
-			//for each unicode character...
-			for(char32_t character = 0; character < 255; ++character)
+			else
 			{
-				// Score for this character.
-				score_t score = 0;
-
-				//render character, or null if not printable
-				auto bitmap = typer->renderCharacter(character);
-
-
-
-				//if printable char
-				if(bitmap && (bitmap->pitch > 0))
+				//try to find a close match by going around the actual value
+				int offsetFromIdeal = 1;
+				while(greyscaleToCharacterMap.find(imageGreyscaleValue + offsetFromIdeal) == greyscaleToCharacterMap.end())
 				{
-
-
-
-					// Compare this bitmap against this block in the source image.
-
-
-					    // Calculate the offsets of the bitmap in the image block.
-						assert(blockHeight >= bitmap->rows);
-						assert(blockHeight >= bitmap->width);
-
-						const uint16_t bitmapYOffset = (blockHeight - bitmap->rows) / 2;
-						const uint16_t bitmapXOffset = 0;
-
-
-						// Iterate through the pixels in the bitmap, comparing them against the corresponding
-					    // image block pixels, and produce a score.
-						for(int bitmapX = 0; bitmapX < bitmap->width; ++bitmapX)
-						{
-							for(int bitmapY = 0; bitmapY < bitmap->rows; ++bitmapY)
-							{
-
-								int imagePixelValue = 255 - sourceImage.get_pixel(bitmapX + bitmapXOffset, bitmapY + bitmapYOffset);
-								int bitmapPixelValue = *(bitmap->buffer + (bitmapY * bitmap->pitch) + bitmapX);
-
-								//std::cout << "(" << bitmapX << "," << bitmapY << "): " << typer->getApproximateGreyscaleCharacter(bitmapPixelValue) << " ";
-								//std::cout << "(" << bitmapX + bitmapXOffset  << "," << bitmapY + bitmapYOffset << "): " << typer->getApproximateGreyscaleCharacter(imagePixelValue) << std::endl;
-
-								score += computeScore(imagePixelValue, bitmapPixelValue);
-
-							}
-						}
-
-
-					//std::cout << "Character \'" << (char)character << "\' matches the block with a score of " << score;
-
-					//if score is better than our current best, set the current best to this
-					if(score > currentBest.first)
-					{
-						//std::cout << ", a new best";
-						currentBest.first = score;
-						currentBest.second = character;
-					}
-
-					//std::cout << std::endl;
+//#ifdef ENABLE_DEBUG_OUT
+//				std::cout << "Looking for a match offset from the ideal greyscale value by " << offsetFromIdeal << std::endl;
+//#endif
+					offsetFromIdeal = offsetFromIdeal > 0 ? -offsetFromIdeal : -offsetFromIdeal + 1;
 				}
 
-			}
-			std::cout << "The best match for the block is " << currentBest.second << std::endl;
+#ifdef ENABLE_DEBUG_OUT
+				std::cout << "Found a rough match in char " << std::hex << greyscaleToCharacterMap.at(imageGreyscaleValue + offsetFromIdeal) << std::endl;
+#endif
 
-			//use our best character to the CharImage for this block
-			outputImage.add(blockStartX / blockHeight, blockStartY / blockHeight, currentBest.second);
+				outputImage.add(blockStartX / blockHeight, blockStartY / blockHeight, greyscaleToCharacterMap.at(imageGreyscaleValue + offsetFromIdeal));
+
+			}
 
 		}
 	}
 
-	std::wcout << outputImage;
+
+	//delete and re-create the file
+	DeleteFile("output.txt");
+
+	std::wofstream outputStream;
+
+	outputStream.open("output.txt");
+
+	outputStream << outputImage;
+
+	outputStream.close();
 
 
 	return 0;

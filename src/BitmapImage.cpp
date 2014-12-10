@@ -7,16 +7,25 @@
 
 #include "BitmapImage.h"
 
+//create an empty bitmap
+BitmapImage::BitmapImage()
+:_pixels(1, std::vector<greyscaleType>(0))
+{
+}
+
 //construct from a FreeType bitmap
-BitmapImage::BitmapImage(FT_Bitmap * bitmap)
-:_pixels(bitmap->rows, std::vector<uint8_t>(bitmap->width))
+BitmapImage::BitmapImage(FT_Bitmap & bitmap)
+:_pixels(bitmap.rows, std::vector<greyscaleType>(bitmap.width))
 {
 	// Iterate through the pixels in the bitmap and add them to the _pixels array
-	for(int bitmapY = 0; bitmapY < bitmap->rows; ++bitmapY)
+	for(int bitmapY = 0; bitmapY < bitmap.rows; ++bitmapY)
 	{
-		for(int bitmapX = 0; bitmapX < bitmap->width; ++bitmapX)
+		for(int bitmapX = 0; bitmapX < bitmap.width; ++bitmapX)
 		{
-			uint8_t bitmapPixelValue = *(bitmap->buffer + (bitmapY * bitmap->pitch) + bitmapX);
+			uint8_t bitmapPixelValueRaw = *(bitmap.buffer + (bitmapY * bitmap.pitch) + bitmapX);
+
+			//convert from 8-bit greyscale to 16-bit greyscale
+			greyscaleType bitmapPixelValue = 257 * bitmapPixelValueRaw;
 
 			_pixels.at(bitmapY).at(bitmapX) = bitmapPixelValue;
 
@@ -25,17 +34,24 @@ BitmapImage::BitmapImage(FT_Bitmap * bitmap)
 }
 
 //construct from a PNG image, a starting point, and a width and height to go left and down from
-BitmapImage::BitmapImage(png::image & image, unsigned int startx, unsigned int starty, unsigned int width, unsigned int height)
-:_pixels(height, std::vector<uint8_t>(width))
+BitmapImage::BitmapImage(png::image<png::gray_pixel> & image, unsigned int startx, unsigned int starty, unsigned int width, unsigned int height)
+:_pixels(height, std::vector<greyscaleType>(width))
 {
 	// Iterate through the pixels in the bitmap and add them to the _pixels array
-	for(int imageY = 0; imageY < height; ++imageY)
+	for(unsigned int imageY = 0; imageY < height; ++imageY)
 	{
-		for(int imageX = 0; imageX < width; ++imageX)
+		for(unsigned int imageX = 0; imageX < width; ++imageX)
 		{
-			uint8_t bitmapPixelValue = image.get_pixel(startx + imageX, starty + imageY);
+			uint8_t imagePixelRawValue = image.get_pixel(startx + imageX, starty + imageY);
 
-			_pixels.at(imageY)[imageX] = bitmapPixelValue;
+			//convert from 8-bit greyscale to 16-bit greyscale
+			greyscaleType imagePixelValue = 257 * imagePixelRawValue;
+
+			//for some reason, png++ loads greyscale images inverted
+			//fix that here
+			imagePixelValue = 65535-imagePixelValue;
+
+			_pixels.at(imageY).at(imageX) = imagePixelValue;
 
 		}
 	}
@@ -55,7 +71,7 @@ unsigned int BitmapImage::getWidth()
 
 	else
 	{
-		return _pixels.at(0).size;
+		return _pixels.at(0).size();
 	}
 }
 
@@ -64,7 +80,7 @@ bool BitmapImage::isEmpty()
 	return _pixels.empty() || _pixels.at(0).empty();
 }
 
-uint8_t BitmapImage::getPixel(unsigned int x, unsigned int y)
+BitmapImage::greyscaleType BitmapImage::getPixel(unsigned int x, unsigned int y)
 {
 	return _pixels.at(y).at(x);
 }
@@ -74,17 +90,20 @@ BitmapImage::~BitmapImage()
 {
 }
 
-uint8_t BitmapImage::greyscaleValue(int fullHeight, int fullWidth)
+BitmapImage::greyscaleType BitmapImage::greyscaleValue(unsigned int fullHeight, unsigned int fullWidth)
 {
-	unsigned int totalGrayscale = 0;
-	for(unsigned int y = 0; y <= fullWidth; ++y)
+	unsigned long totalGrayscale = 0;
+	unsigned int height = getHeight();
+	unsigned int width = getWidth();
+	for(unsigned int y = 0; y < height; ++y)
 	{
-		for(unsigned int x = 0; x <= fullHeight; ++x)
+		for(unsigned int x = 0; x < width; ++x)
 		{
 			totalGrayscale += getPixel(x, y);
 		}
 	}
 
+	//divide by the assumed height and width, not the actual ones
 	totalGrayscale /= fullWidth * fullHeight;
 
 	return totalGrayscale;

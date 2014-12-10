@@ -23,16 +23,24 @@
 
 class BitmapImage
 {
+public:
+	typedef uint16_t greyscaleType;
+
+private:
+
 	//the outer vector is columns, or y
 	//the inner vector is rows, or x
-	std::vector<std::vector<uint8_t>> _pixels;
+	std::vector<std::vector<greyscaleType>> _pixels;
 public:
 
+	//construct empty bitmap
+	BitmapImage();
+
 	//construct from a FreeType bitmap
-	BitmapImage(FT_Bitmap * bitmap);
+	BitmapImage(FT_Bitmap & bitmap);
 
 	//construct from a PNG image, a starting point, and a width and height to go left and down from
-	BitmapImage(png::image & image, unsigned int startx, unsigned int starty, unsigned int width, unsigned int height);
+	BitmapImage(png::image<png::gray_pixel> & image, unsigned int startx, unsigned int starty, unsigned int width, unsigned int height);
 
 	unsigned int getHeight();
 
@@ -41,17 +49,17 @@ public:
 	bool isEmpty();
 
 	//(0,0) is at the top left
-	uint8_t getPixel(unsigned int x, unsigned int y);
+	greyscaleType getPixel(unsigned int x, unsigned int y);
 
 	virtual ~BitmapImage();
 
 	//returns the average greyscale value of the image when it is assumed to be fullHeight by fullWidth
 	//this is used for, say, getting the average greyscale value of a FreeType-generated character,
 	//which is only as wide and as tall as it needs to be, over the full-size space
-	uint8_t greyscaleValue(int fullHeight, int fullWidth);
+	greyscaleType greyscaleValue(unsigned int fullHeight, unsigned int fullWidth);
 
 	//returns the average greyscale value of the image
-	uint8_t greyscaleValue()
+	greyscaleType greyscaleValue()
 	{
 		return greyscaleValue(getHeight(), getWidth());
 	}

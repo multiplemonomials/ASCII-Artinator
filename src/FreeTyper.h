@@ -14,13 +14,13 @@
 #include <memory>
 #include <iostream>
 
+#include "BitmapImage.h"
+
 class FreeTyper
 {
 	FT_Library _library;
 
 	FT_Face _face; /* handle to face object */
-
-	std::shared_ptr<FT_Bitmap> _whiteSpaceBitmap;
 
 	FreeTyper();
 public:
@@ -66,8 +66,6 @@ public:
 			for(int column = 0; column < bitmap.width; ++column)
 			{
 				char output = getApproximateGreyscaleCharacter(*(bitmap.buffer + (row * bitmap.pitch) + column));
-				//uint8_t pixel = *(bitmap.buffer + (row * bitmap.pitch) + column);
-				//char output = ((pixel) > 128) ? '#' : '.';
 				std::cout << output << ' ';
 			}
 			std::cout << std::endl;
@@ -84,7 +82,7 @@ public:
 	 *
 	 * returns a null shared_ptr on error
 	 */
-	std::shared_ptr<FT_Bitmap> renderCharacter(char32_t character);
+	std::shared_ptr<BitmapImage> renderCharacter(char32_t character);
 };
 
 #endif /* FREETYPER_H_ */

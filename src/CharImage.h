@@ -17,19 +17,19 @@
  */
 class CharImage
 {
-	std::vector<std::vector<char32_t>> _blocks;
+	std::vector<std::vector<char16_t>> _blocks;
 public:
 
 	/**
 	 * Construct from height and width in chars
 	 */
 	CharImage(unsigned int height, unsigned int width)
-	: _blocks(height, std::vector<char32_t>(width))
+	: _blocks(height, std::vector<char16_t>(width))
 	{
 
 	}
 
-	void add(int blockx, int blocky, char32_t character);
+	void add(int blockx, int blocky, char16_t character);
 
 
 	//print char image to stream

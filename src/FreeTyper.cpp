@@ -13,16 +13,14 @@
 
 FreeTyper::FreeTyper()
 : _library(),
-_face(),
-_whiteSpaceBitmap(new FT_Bitmap())
+_face()
 {
 
-	// TODO Auto-generated constructor stub
 
 }
 
-FreeTyper::~FreeTyper() {
-	// TODO Auto-generated destructor stub
+FreeTyper::~FreeTyper()
+{
 }
 
 std::shared_ptr<FreeTyper> FreeTyper::init(int characterHeight)
@@ -54,24 +52,17 @@ std::shared_ptr<FreeTyper> FreeTyper::init(int characterHeight)
 		throw std::exception{};
 	}
 
-	//set up white space bitmap
-	typer->_whiteSpaceBitmap->buffer = new unsigned char[characterHeight*characterHeight];
-	memset(typer->_whiteSpaceBitmap->buffer, 0, characterHeight*characterHeight);
-
-	typer->_whiteSpaceBitmap->pitch = characterHeight;
-	typer->_whiteSpaceBitmap->rows = characterHeight;
-	typer->_whiteSpaceBitmap->width = characterHeight;
 
 	return typer;
 }
 
-std::shared_ptr<FT_Bitmap> FreeTyper::renderCharacter(char32_t character)
+std::shared_ptr<BitmapImage> FreeTyper::renderCharacter(char32_t character)
 {
 	auto glyphIndex = FT_Get_Char_Index(_face, character);
 
 	if(glyphIndex == 0)
 	{
-		return std::shared_ptr<FT_Bitmap>();
+		return std::make_shared<BitmapImage>();
 	}
 
 	if(FT_Load_Glyph(_face, glyphIndex, FT_LOAD_DEFAULT))
@@ -84,20 +75,6 @@ std::shared_ptr<FT_Bitmap> FreeTyper::renderCharacter(char32_t character)
 		throw std::exception();
 	}
 
-	auto bitmap = std::make_shared<FT_Bitmap>();
-
-	if(FT_Bitmap_Copy(_library, &(_face->glyph->bitmap), bitmap.get()))
-	{
-		throw std::exception();
-	}
-
-	//a bitmap with no pitch is returned for whitespace (but still valid) characters
-	//if(bitmap->pitch == 0)
-	//{
-	//	return _whiteSpaceBitmap;
-	//}
-
-	//printBitmap(_face->glyph->bitmap);
-	return bitmap;
+	return std::make_shared<BitmapImage>(_face->glyph->bitmap);
 }
 
