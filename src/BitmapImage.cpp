@@ -22,10 +22,7 @@ BitmapImage::BitmapImage(FT_Bitmap & bitmap)
 	{
 		for(int bitmapX = 0; bitmapX < bitmap.width; ++bitmapX)
 		{
-			uint8_t bitmapPixelValueRaw = *(bitmap.buffer + (bitmapY * bitmap.pitch) + bitmapX);
-
-			//convert from 8-bit greyscale to 16-bit greyscale
-			greyscaleType bitmapPixelValue = 257 * bitmapPixelValueRaw;
+			uint8_t bitmapPixelValue = *(bitmap.buffer + (bitmapY * bitmap.pitch) + bitmapX);
 
 			_pixels.at(bitmapY).at(bitmapX) = bitmapPixelValue;
 
@@ -42,14 +39,12 @@ BitmapImage::BitmapImage(png::image<png::gray_pixel> & image, unsigned int start
 	{
 		for(unsigned int imageX = 0; imageX < width; ++imageX)
 		{
-			uint8_t imagePixelRawValue = image.get_pixel(startx + imageX, starty + imageY);
+			uint8_t imagePixelValue = image.get_pixel(startx + imageX, starty + imageY);
 
-			//convert from 8-bit greyscale to 16-bit greyscale
-			greyscaleType imagePixelValue = 257 * imagePixelRawValue;
 
 			//for some reason, png++ loads greyscale images inverted
 			//fix that here
-			imagePixelValue = 65535-imagePixelValue;
+			//imagePixelValue = 255-imagePixelValue;
 
 			_pixels.at(imageY).at(imageX) = imagePixelValue;
 

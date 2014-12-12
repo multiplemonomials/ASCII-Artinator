@@ -24,7 +24,7 @@
 class BitmapImage
 {
 public:
-	typedef uint16_t greyscaleType;
+	typedef uint8_t greyscaleType;
 
 private:
 

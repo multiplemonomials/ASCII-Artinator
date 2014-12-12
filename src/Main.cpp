@@ -11,9 +11,10 @@
 
 #include <png++/png.hpp>
 
-#define ENABLE_DEBUG_OUT
+//#define ENABLE_DEBUG_OUT
+#define ENABLE_INFO_OUT
 
-unsigned int blockHeight = 8;
+const unsigned int blockHeight = 8;
 
 typedef long long score_t;
 
@@ -29,7 +30,7 @@ int main()
 	png::image<png::gray_pixel> sourceImage;
 	try
 	{
-		sourceImage = png::image<png::gray_pixel>("C:\\eclipse\\workspace\\Unicode Artinator\\Debug\\test.png");
+		sourceImage = png::image<png::gray_pixel>("C:\\eclipse\\workspace\\ASCII Artinator\\Debug\\test.png");
 	}
 	catch(png::std_error & error)
 	{
@@ -57,8 +58,9 @@ int main()
 	std::cerr << "Building greyscale to character mapping..." << std::endl;
 
 	//fill a hash map with ascii characters and their greyscale values
-	std::map<BitmapImage::greyscaleType, char16_t> greyscaleToCharacterMap;
-	for(char16_t character = 32; character < 255; ++character)
+	//note: this loop relies on -funsigned-char
+	std::map<BitmapImage::greyscaleType, char> greyscaleToCharacterMap;
+	for(char character = 32; character < 127; ++character)
 	{
 		//render character, or null if not printable
 		auto bitmap = typer->renderCharacter(character);
@@ -66,8 +68,8 @@ int main()
 		//if printable char
 		if(!bitmap->isEmpty())
 		{
-#ifdef ENABLE_DEBUG_OUT
-			std::cout << "Adding char " << std::hex << character << " with a greyscale value of " << std::dec << bitmap->greyscaleValue(blockHeight, blockHeight) << std::endl;
+#ifdef ENABLE_INFO_OUT
+			std::cout << "Adding char " << character << " with a greyscale value of " << std::dec << (int16_t)bitmap->greyscaleValue(blockHeight, blockHeight) << std::endl;
 #endif
 			greyscaleToCharacterMap[bitmap->greyscaleValue(blockHeight, blockHeight)] = character;
 		}
@@ -86,7 +88,7 @@ int main()
 		//and each column in each row in the source image...
 		for(unsigned int blockStartX = 0; blockStartX < sourceImage.get_width(); blockStartX += blockHeight)
 		{
-#ifdef ENABLE_DEBUG_OUT
+#ifdef ENABLE_INFO_OUT
 			std::cout << "Processing block (" << std::dec << blockStartX / blockHeight << ", " << blockStartY / blockHeight << ")" << std::endl;
 #endif
 
@@ -94,17 +96,17 @@ int main()
 			// read the block's pixels into an object
 			BitmapImage blockPixels(sourceImage, blockStartX, blockStartY, blockHeight, blockHeight);
 
-			int imageGreyscaleValue = blockPixels.greyscaleValue();
+			BitmapImage::greyscaleType imageGreyscaleValue = blockPixels.greyscaleValue();
 
-#ifdef ENABLE_DEBUG_OUT
-			std::cout << "block greyscale value (16 bit):" << std::dec << imageGreyscaleValue << std::endl;
+#ifdef ENABLE_INFO_OUT
+			std::cout << "block greyscale value:" << std::dec << (int16_t)imageGreyscaleValue << std::endl;
 #endif
 
 			//if there is an exact match, our job is easy
 			if(greyscaleToCharacterMap.find(imageGreyscaleValue) != greyscaleToCharacterMap.end())
 			{
 #ifdef ENABLE_DEBUG_OUT
-				std::cout << "Found an exact match in char " << std::hex << greyscaleToCharacterMap.at(imageGreyscaleValue) << std::endl;
+				std::cout << "Found an exact match in char " << '\'' << greyscaleToCharacterMap.at(imageGreyscaleValue) << '\'' << std::endl;
 #endif
 				//use our best character to the CharImage for this block
 				outputImage.add(blockStartX / blockHeight, blockStartY / blockHeight, greyscaleToCharacterMap.at(imageGreyscaleValue));
@@ -115,9 +117,9 @@ int main()
 				int offsetFromIdeal = 1;
 				while(greyscaleToCharacterMap.find(imageGreyscaleValue + offsetFromIdeal) == greyscaleToCharacterMap.end())
 				{
-//#ifdef ENABLE_DEBUG_OUT
-//				std::cout << "Looking for a match offset from the ideal greyscale value by " << offsetFromIdeal << std::endl;
-//#endif
+#ifdef ENABLE_DEBUG_OUT
+				std::cout << "Looking for a match offset from the ideal greyscale value by " << offsetFromIdeal << std::endl;
+#endif
 					offsetFromIdeal = offsetFromIdeal > 0 ? -offsetFromIdeal : -offsetFromIdeal + 1;
 				}
 
@@ -136,13 +138,15 @@ int main()
 	//delete and re-create the file
 	DeleteFile("output.txt");
 
-	std::wofstream outputStream;
+	std::ofstream outputStream;
 
 	outputStream.open("output.txt");
 
 	outputStream << outputImage;
 
 	outputStream.close();
+
+	std::cerr << "Done!" << std::endl;
 
 
 	return 0;
