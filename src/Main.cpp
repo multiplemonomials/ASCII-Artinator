@@ -5,6 +5,7 @@
 #include <map>
 
 #include <Windows.h>
+#include <assert.h>
 
 #include "FreeTyper.h"
 #include "CharImage.h"
@@ -15,8 +16,6 @@
 #define ENABLE_INFO_OUT
 
 const unsigned int blockHeight = 8;
-
-typedef long long score_t;
 
 //thanks StackOverflow
 template <typename T> int sgn(T val) {
@@ -57,10 +56,14 @@ int main()
 
 	std::cerr << "Building greyscale to character mapping..." << std::endl;
 
+	//greyscale value of the blackest character
+	//used for optimization
+	uint8_t maxGreyscaleValue = 0;
+
 	//fill a hash map with ascii characters and their greyscale values
 	//note: this loop relies on -funsigned-char
 	std::map<BitmapImage::greyscaleType, char> greyscaleToCharacterMap;
-	for(char character = 32; character < 127; ++character)
+	for(char character = 32; character < 255; ++character)
 	{
 		//render character, or null if not printable
 		auto bitmap = typer->renderCharacter(character);
@@ -68,14 +71,26 @@ int main()
 		//if printable char
 		if(!bitmap->isEmpty())
 		{
+			BitmapImage::greyscaleType greyscaleValue = 2 * bitmap->greyscaleValue(blockHeight, blockHeight);
+
 #ifdef ENABLE_INFO_OUT
-			std::cout << "Adding char " << character << " with a greyscale value of " << std::dec << (int16_t)bitmap->greyscaleValue(blockHeight, blockHeight) << std::endl;
+			std::cout << "Adding char " << character << " with a greyscale value of " << std::dec << (int16_t)greyscaleValue << std::endl;
 #endif
-			greyscaleToCharacterMap[bitmap->greyscaleValue(blockHeight, blockHeight)] = character;
+
+			if(greyscaleValue > maxGreyscaleValue)
+			{
+				maxGreyscaleValue = greyscaleValue;
+			}
+
+
+			greyscaleToCharacterMap[greyscaleValue] = character;
 		}
 
 	}
 
+#ifdef ENABLE_INFO_OUT
+			std::cout << "Darkest character is " << greyscaleToCharacterMap.at(maxGreyscaleValue) << " with a greyscale value of " << std::dec << (int16_t)maxGreyscaleValue << std::endl;
+#endif
 
 	std::cerr << "Translating image..." << std::endl;
 
@@ -108,8 +123,13 @@ int main()
 #ifdef ENABLE_DEBUG_OUT
 				std::cout << "Found an exact match in char " << '\'' << greyscaleToCharacterMap.at(imageGreyscaleValue) << '\'' << std::endl;
 #endif
-				//use our best character to the CharImage for this block
+				//use our best character in the CharImage for this block
 				outputImage.add(blockStartX / blockHeight, blockStartY / blockHeight, greyscaleToCharacterMap.at(imageGreyscaleValue));
+			}
+			//if we are over the max value, we can only go down and don't need to search
+			else if(imageGreyscaleValue > maxGreyscaleValue)
+			{
+				outputImage.add(blockStartX / blockHeight, blockStartY / blockHeight, greyscaleToCharacterMap.at(maxGreyscaleValue));
 			}
 			else
 			{
@@ -121,6 +141,8 @@ int main()
 				std::cout << "Looking for a match offset from the ideal greyscale value by " << offsetFromIdeal << std::endl;
 #endif
 					offsetFromIdeal = offsetFromIdeal > 0 ? -offsetFromIdeal : -offsetFromIdeal + 1;
+
+					assert(imageGreyscaleValue + offsetFromIdeal < 255);
 				}
 
 #ifdef ENABLE_DEBUG_OUT
@@ -146,7 +168,7 @@ int main()
 
 	outputStream.close();
 
-	std::cerr << "Done!" << std::endl;
+	std::cerr << "Done!" << std::endl << "Make sure to use code page 1252 when viewing the output!" << std::endl;
 
 
 	return 0;

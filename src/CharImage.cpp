@@ -10,21 +10,15 @@
 #include <uchar.h>
 #include <iomanip>
 
-std::wostream & operator<<(std::wostream & stream, const CharImage & charImage)
+std::ostream & operator<<(std::ostream & stream, const CharImage & charImage)
 {
 	//each block is a 32-bit character
 	for(auto row : charImage._blocks)
 	{
-		mbstate_t mbstate{};
-
-		//init mbstate_t
-		mbrlen(NULL, 0, &mbstate);
 
 		for(auto character : row)
 		{
-			char multibyteChar[MB_CUR_MAX];
-			c16rtomb(multibyteChar, character, &mbstate);
-			stream << multibyteChar;
+			stream << character;
 		}
 
 		stream << std::endl;
@@ -33,7 +27,7 @@ std::wostream & operator<<(std::wostream & stream, const CharImage & charImage)
 	return stream;
 }
 
-void CharImage::add(int blockx, int blocky, char16_t character)
+void CharImage::add(int blockx, int blocky, char character)
 {
 	_blocks.at(blocky).at(blockx) = character;
 }

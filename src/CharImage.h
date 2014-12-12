@@ -17,28 +17,28 @@
  */
 class CharImage
 {
-	std::vector<std::vector<char16_t>> _blocks;
+	std::vector<std::vector<char>> _blocks;
 public:
 
 	/**
 	 * Construct from height and width in chars
 	 */
 	CharImage(unsigned int height, unsigned int width)
-	: _blocks(height, std::vector<char16_t>(width))
+	: _blocks(height, std::vector<char>(width))
 	{
 
 	}
 
-	void add(int blockx, int blocky, char16_t character);
+	void add(int blockx, int blocky, char character);
 
 
 	//print char image to stream
-	friend std::wostream & operator<<(std::wostream & stream, const CharImage & charImage);
+	friend std::ostream & operator<<(std::ostream & stream, const CharImage & charImage);
 
 	~CharImage(){}
 };
 
-std::wostream & operator<<(std::wostream & stream, const CharImage & charImage);
+std::ostream & operator<<(std::ostream & stream, const CharImage & charImage);
 
 
 #endif /* CHARIMAGE_H_ */
