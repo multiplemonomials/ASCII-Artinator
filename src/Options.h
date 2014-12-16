@@ -19,6 +19,8 @@ class Connection;
 class Options
 {
 private:
+
+	//options are initialized by Main
 	Options();
 
     Options(Options const&);              // Don't Implement
@@ -26,20 +28,18 @@ private:
 
 public:
 
-    enum class Alliance
-    {
-    	RED,
-    	BLUE
-    };
+   //pixels in either axis per char in the output
+   unsigned int blockSize;
 
-    Alliance _alliance;
+   //enable debug logging
+   bool debugOut;
 
-    bool _armEnabled;
+   //enable info logging
+   bool infoOut;
 
-    //port the controller connected to the drivers' console is on
-    short _controllerPort;
+   bool scaleCharValues;
 
-	static Options & instance();
+   static Options & instance();
 
 
 };

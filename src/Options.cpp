@@ -6,12 +6,9 @@
  */
 
 #include "Options.h"
-#include "Configuration.h"
+
 
 Options::Options()
-:_alliance(CURRENT_ALLIANCE),
- _armEnabled(ARM_ENABLED),
- _controllerPort(CONTROLLER_PORT)
 {
 
 }
