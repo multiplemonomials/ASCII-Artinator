@@ -10,6 +10,8 @@
 #include "FreeTyper.h"
 #include "CharImage.h"
 
+#include <argtable2.h>
+
 #include <png++/png.hpp>
 
 //#define ENABLE_DEBUG_OUT
@@ -71,7 +73,15 @@ int main()
 		//if printable char
 		if(!bitmap->isEmpty())
 		{
-			BitmapImage::greyscaleType greyscaleValue = 2 * bitmap->greyscaleValue(blockHeight, blockHeight);
+			BitmapImage::greyscaleType greyscaleValue = bitmap->greyscaleValue(blockHeight, blockHeight);
+
+			//scale the value so that the image has more variation
+			if(greyscaleValue > 126)
+			{
+				greyscaleValue = 126;
+			}
+
+			greyscaleValue *= 2;
 
 #ifdef ENABLE_INFO_OUT
 			std::cout << "Adding char " << character << " with a greyscale value of " << std::dec << (int16_t)greyscaleValue << std::endl;
