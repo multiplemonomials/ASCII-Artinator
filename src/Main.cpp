@@ -169,7 +169,7 @@ int main(int argc, char** argv)
 	struct arg_lit *scaling = arg_lit0("s", "scaling", "enable scaling the darkest character to near-black");
 	struct arg_lit *force = arg_lit0("f", "force", "overwrite output file if it exists");
 	struct arg_lit *help = arg_lit0("h", "help", "list usage options (this)");
-	struct arg_int *blockSize = arg_int0("s","blockSize", "<n>", "set number of pixels (in either axis) of the original image per character.  Default 16.");
+	struct arg_int *blockSize = arg_int0("b","blockSize", "<n>", "set number of pixels (in either axis) of the original image per character.  Default 16.");
 	struct arg_file *input = arg_file1(nullptr, nullptr,"<input>", "filename to read png image from");
 	struct arg_file *output = arg_file1(nullptr,nullptr,"<output>", "filename to write ASCII image to");
 	struct arg_end *end = arg_end(20);
@@ -260,7 +260,7 @@ int main(int argc, char** argv)
 
 	outputStream.open(output->filename[0]);
 
-	outputStream << "foo";
+	outputStream << *charImage;
 
 	outputStream.close();
 
