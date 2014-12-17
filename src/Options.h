@@ -39,6 +39,12 @@ public:
 
    bool scaleCharValues;
 
+   //invert image
+   bool invert;
+
+   //highest-value character to use
+   uint8_t maxCharValue;
+
    static Options & instance();
 
 

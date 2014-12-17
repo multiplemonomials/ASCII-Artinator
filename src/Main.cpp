@@ -26,7 +26,7 @@ std::pair<std::map<BitmapImage::greyscaleType, char>, int> getCharToGreyscaleMap
 	//fill a hash map with ascii characters and their greyscale values
 	//note: this loop relies on -funsigned-char
 	std::map<BitmapImage::greyscaleType, char> greyscaleToCharacterMap;
-	for(char character = 32; character < 255; ++character)
+	for(char character = 32; character < Options::instance().maxCharValue; ++character)
 	{
 		//render character, or null if not printable
 		auto bitmap = typer->renderCharacter(character);
@@ -60,7 +60,7 @@ std::pair<std::map<BitmapImage::greyscaleType, char>, int> getCharToGreyscaleMap
 
 	if(Options::instance().scaleCharValues)
 	{
-		int scalar = 255 / maxGreyscaleValue;
+		int scalar = Options::instance().maxCharValue / maxGreyscaleValue;
 
 		std::map<BitmapImage::greyscaleType, char> scaledCharacterMap;
 
@@ -167,6 +167,8 @@ int main(int argc, char** argv)
 	struct arg_lit *info = arg_lit0("v", "verbose", "enable verbose (basically progress) output");
 	struct arg_lit *debug = arg_lit0("d", "debug", "enable debug output for development");
 	struct arg_lit *scaling = arg_lit0("s", "scaling", "enable scaling the darkest character to near-black");
+	struct arg_lit *invert = arg_lit0("i", "invert", "invert lights and darks in output");
+	struct arg_lit *asciiOnly = arg_lit0("a", "asciiOnly", "use ASCII only, not extended ASCII. This allows you to use a utf-8 editor to view the output.");
 	struct arg_lit *force = arg_lit0("f", "force", "overwrite output file if it exists");
 	struct arg_lit *help = arg_lit0("h", "help", "list usage options (this)");
 	struct arg_int *blockSize = arg_int0("b","blockSize", "<n>", "set number of pixels (in either axis) of the original image per character.  Default 16.");
@@ -174,7 +176,7 @@ int main(int argc, char** argv)
 	struct arg_file *output = arg_file1(nullptr,nullptr,"<output>", "filename to write ASCII image to");
 	struct arg_end *end = arg_end(20);
 
-	void * argtable[] = {info, debug, scaling, force, help, blockSize, input, output, end};
+	void * argtable[] = {info, debug, scaling, invert, asciiOnly, force, help, blockSize, input, output, end};
 
 	if (arg_nullcheck(argtable) != 0)
 	{
@@ -211,6 +213,16 @@ int main(int argc, char** argv)
 	Options::instance().infoOut = info->count > 0;
 	Options::instance().debugOut = debug->count > 0;
 	Options::instance().scaleCharValues = scaling->count > 0;
+	Options::instance().invert = invert->count > 0;
+	if(asciiOnly->count > 0)
+	{
+		Options::instance().maxCharValue = 127;
+	}
+	else
+	{
+		Options::instance().maxCharValue = 255;
+
+	}
 	Options::instance().blockSize = blockSize->ival[0];
 
 
@@ -241,7 +253,7 @@ int main(int argc, char** argv)
 	}
 
 	//ensure space for output file
-	if(access(output->filename[0], F_OK))
+	if(access(output->filename[0], F_OK) == 0)
 	{
 		if(force->count > 0)
 		{

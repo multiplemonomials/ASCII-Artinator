@@ -6,6 +6,7 @@
  */
 
 #include "BitmapImage.h"
+#include "Options.h"
 
 //create an empty bitmap
 BitmapImage::BitmapImage()
@@ -44,7 +45,10 @@ BitmapImage::BitmapImage(png::image<png::gray_pixel> & image, unsigned int start
 
 			//for some reason, png++ loads greyscale images inverted
 			//fix that here
-			//imagePixelValue = 255-imagePixelValue;
+			if(Options::instance().invert)
+			{
+				imagePixelValue = 255-imagePixelValue;
+			}
 
 			_pixels.at(imageY).at(imageX) = imagePixelValue;
 
