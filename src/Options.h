@@ -45,6 +45,8 @@ public:
    //highest-value character to use
    uint8_t maxCharValue;
 
+   int version;
+
    static Options & instance();
 
 

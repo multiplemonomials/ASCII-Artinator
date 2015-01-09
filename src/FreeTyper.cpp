@@ -23,7 +23,7 @@ FreeTyper::~FreeTyper()
 {
 }
 
-std::shared_ptr<FreeTyper> FreeTyper::init(int characterHeight)
+std::shared_ptr<FreeTyper> FreeTyper::init(int characterHeight, std::string fontPath)
 {
 	auto typer = std::shared_ptr<FreeTyper>(new FreeTyper());
 	if(FT_Init_FreeType(&(typer->_library)))
@@ -38,18 +38,17 @@ std::shared_ptr<FreeTyper> FreeTyper::init(int characterHeight)
 	{
 		if(error == FT_Err_Unknown_File_Format)
 		{
-			std::cerr << "Could not read the font file." << std::endl;
+			throw std::runtime_error("Could not read the font file: " + fontPath);
 		}
 		else
 		{
-			std::cerr << "FreeType Error " << error << " while loading font" << std::endl;
+			throw std::runtime_error("FreeType Error " + std::to_string(error) + " while loading font");
 		}
-		throw std::exception{};
 	}
 
 	if(FT_Set_Pixel_Sizes(typer->_face, 0, characterHeight))
 	{
-		throw std::exception{};
+		throw std::runtime_error("Call to FT_Set_Pixel_Sizes failed!");
 	}
 
 
@@ -67,12 +66,12 @@ std::shared_ptr<BitmapImage> FreeTyper::renderCharacter(char32_t character)
 
 	if(FT_Load_Glyph(_face, glyphIndex, FT_LOAD_DEFAULT))
 	{
-		throw std::exception();
+		throw std::runtime_error("Call to FT_Load_Glyph failed!");
 	}
 
 	if(FT_Render_Glyph(_face->glyph, FT_RENDER_MODE_NORMAL))
 	{
-		throw std::exception();
+		throw std::runtime_error("Call to FT_Render_Glyph");
 	}
 
 	return std::make_shared<BitmapImage>(_face->glyph->bitmap);

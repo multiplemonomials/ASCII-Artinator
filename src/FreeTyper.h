@@ -26,6 +26,8 @@ class FreeTyper
 public:
 	virtual ~FreeTyper();
 
+
+	//used for debugging
 	char getApproximateGreyscaleCharacter(uint8_t greyscaleValue)
 	{
 		char output = ' ';
@@ -75,7 +77,7 @@ public:
 	/**
 	 * Factory that generates a FreeTyper
 	 */
-	static std::shared_ptr<FreeTyper> init(int characterHeight);
+	static std::shared_ptr<FreeTyper> init(int characterHeight, std::string fontPath);
 
 	/**
 	 * Attempts to render the given character

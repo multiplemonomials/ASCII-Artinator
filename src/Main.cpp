@@ -3,6 +3,8 @@
 #include <thread>
 #include <cmath>
 #include <map>
+#include <sstream>
+
 #include <Windows.h>
 #include <assert.h>
 
@@ -79,10 +81,10 @@ std::pair<std::map<BitmapImage::greyscaleType, char>, int> getCharToGreyscaleMap
 }
 
 //function which actually does the image conversion
-std::shared_ptr<CharImage> mainProcess(png::image<png::gray_pixel> & sourceImage)
+std::shared_ptr<CharImage> mainProcess(png::image<png::gray_pixel> & sourceImage, std::string fontFile)
 {
 	//obtain rasterizer from factory
-	auto typer = FreeTyper::init( Options::instance().blockSize);
+	auto typer = FreeTyper::init( Options::instance().blockSize, fontFile);
 
 	std::cerr << "Building greyscale to character mapping..." << std::endl;
 
@@ -166,25 +168,29 @@ int main(int argc, char** argv)
 	//setup argtable
 	struct arg_lit *info = arg_lit0("v", "verbose", "enable verbose (basically progress) output");
 	struct arg_lit *debug = arg_lit0("d", "debug", "enable debug output for development");
-	struct arg_lit *scaling = arg_lit0("s", "scaling", "enable scaling the darkest character to near-black");
+	struct arg_lit *scaling = arg_lit0("n", "noScaling", "disable scaling the darkest character to near-black");
 	struct arg_lit *invert = arg_lit0("i", "invert", "invert lights and darks in output");
+	struct arg_lit *version = arg_lit0("b", "version", "print version and exit");
 	struct arg_lit *asciiOnly = arg_lit0("a", "asciiOnly", "use ASCII only, not extended ASCII. This allows you to use a utf-8 editor to view the output.");
 	struct arg_lit *force = arg_lit0("f", "force", "overwrite output file if it exists");
 	struct arg_lit *help = arg_lit0("h", "help", "list usage options (this)");
 	struct arg_int *blockSize = arg_int0("b","blockSize", "<n>", "set number of pixels (in either axis) of the original image per character.  Default 16.");
+	struct arg_file *font = arg_file0("c","font","[font]", "Full path to font file, or just its name if if is in the system default folder. (e.g. consola.ttf).");
 	struct arg_file *input = arg_file1(nullptr, nullptr,"<input>", "filename to read png image from");
 	struct arg_file *output = arg_file1(nullptr,nullptr,"<output>", "filename to write ASCII image to");
 	struct arg_end *end = arg_end(20);
 
-	void * argtable[] = {info, debug, scaling, invert, asciiOnly, force, help, blockSize, input, output, end};
+	void * argtable[] = {info, debug, scaling, invert, version, asciiOnly, force, help, blockSize, font, input, output, end};
 
 	if (arg_nullcheck(argtable) != 0)
 	{
 		std::cerr << "error: insufficient memory" << std::endl;
+		return 1;
 	}
 
 	//init default(s)
 	blockSize->ival[0] = 16;
+	font->filename[0] = "C:\\Windows\\Fonts\\consola.ttf";
 
 	int nerrors = arg_parse(argc,argv,argtable);
 
@@ -193,7 +199,13 @@ int main(int argc, char** argv)
 		arg_print_syntaxv(stdout, argtable, "\n");
 		arg_print_glossary(stdout, argtable, "%-25s %s\n");
 
-		return 1;
+		return 0;
+	}
+
+	if(version->count > 0)
+	{
+		std::cout << "aart version " << Options::instance().version << std::endl;
+		return 0;
 	}
 
 	if(nerrors != 0)
@@ -212,7 +224,7 @@ int main(int argc, char** argv)
 	//copy options to Options
 	Options::instance().infoOut = info->count > 0;
 	Options::instance().debugOut = debug->count > 0;
-	Options::instance().scaleCharValues = scaling->count > 0;
+	Options::instance().scaleCharValues = scaling->count == 0;
 	Options::instance().invert = invert->count > 0;
 	if(asciiOnly->count > 0)
 	{
@@ -224,6 +236,42 @@ int main(int argc, char** argv)
 
 	}
 	Options::instance().blockSize = blockSize->ival[0];
+
+	//deal with font argument
+
+	std::stringstream triedLocations;
+	std::string fontFile(font->filename[0]);
+	triedLocations << fontFile << std::endl;
+
+	boolean cannotReadFont = false;
+
+	if(access(font->filename[0], R_OK) != 0)
+	{
+		if(strcmp(font->basename[0], font->filename[0]) == 0) //if there was no full path provided...
+		{
+			//try appending the default fonts folder path
+			std::stringstream stream;
+			stream << "C:\\Windows\\Fonts\\" << font->filename[0];
+
+			fontFile = stream.str();
+			triedLocations << fontFile << std::endl;
+
+			if(access(fontFile.c_str(), R_OK) != 0)
+			{
+				cannotReadFont = true;
+			}
+		}
+		else
+		{
+			cannotReadFont = true;
+		}
+	}
+
+	if(cannotReadFont)
+	{
+		std::cerr << "Error: cannot read font file." << std::endl << "Tried locations: " << triedLocations.str();
+		return 1;
+	}
 
 
 	//load and convert image
@@ -242,13 +290,13 @@ int main(int argc, char** argv)
 	//verify image - make sure dimensions are multiples of  Options::instance().blockSize
 	if(sourceImage.get_width() % Options::instance().blockSize)
 	{
-		std::cerr << "error: the width of the input image is not divisible by " << std::dec <<  Options::instance().blockSize << std::endl;
+		std::cerr << "Error: the width of the input image is not divisible by " << std::dec <<  Options::instance().blockSize << std::endl;
 		return 1;
 	}
 
 	if(sourceImage.get_height() %  Options::instance().blockSize)
 	{
-		std::cerr << "error: the height of the input image is not divisible by " << std::dec <<  Options::instance().blockSize << std::endl;
+		std::cerr << "Error: the height of the input image is not divisible by " << std::dec <<  Options::instance().blockSize << std::endl;
 		return 1;
 	}
 
@@ -266,7 +314,7 @@ int main(int argc, char** argv)
 		}
 	}
 
-	std::shared_ptr<CharImage> charImage = mainProcess(sourceImage);
+	std::shared_ptr<CharImage> charImage = mainProcess(sourceImage, fontFile);
 
 	std::ofstream outputStream;
 

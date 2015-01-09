@@ -9,6 +9,7 @@
 
 
 Options::Options()
+:version(1)
 {
 
 }
