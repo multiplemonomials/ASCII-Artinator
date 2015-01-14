@@ -1,0 +1,25 @@
+id ICON "app.ico"
+1 VERSIONINFO
+FILEVERSION     1,0,0,0
+PRODUCTVERSION  1,0,0,0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904E4"
+    BEGIN
+      VALUE "CompanyName", "Crack of Dawn Engineering"
+      VALUE "FileDescription", "ASCII Artinator"
+      VALUE "FileVersion", "1.1"
+      VALUE "InternalName", "aart"
+      VALUE "LegalCopyright", "Jamie Smith"
+      VALUE "OriginalFilename", "aart.exe"
+      VALUE "ProductName", "aart"
+      VALUE "ProductVersion", "1.1"
+    END
+  END
+
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1252
+  END
+END
