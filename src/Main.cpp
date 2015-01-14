@@ -170,7 +170,7 @@ int main(int argc, char** argv)
 	struct arg_lit *debug = arg_lit0("d", "debug", "enable debug output for development");
 	struct arg_lit *scaling = arg_lit0("n", "noScaling", "disable scaling the darkest character to near-black");
 	struct arg_lit *invert = arg_lit0("i", "invert", "invert lights and darks in output");
-	struct arg_lit *version = arg_lit0("b", "version", "print version and exit");
+	struct arg_lit *version = arg_lit0("e", "version", "print version and exit");
 	struct arg_lit *asciiOnly = arg_lit0("a", "asciiOnly", "use ASCII only, not extended ASCII. This allows you to use a utf-8 editor to view the output.");
 	struct arg_lit *force = arg_lit0("f", "force", "overwrite output file if it exists");
 	struct arg_lit *help = arg_lit0("h", "help", "list usage options (this)");

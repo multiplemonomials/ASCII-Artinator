@@ -13,7 +13,7 @@ goto run
 rem get version number
 echo.
 echo ---------------
-for /F "delims=" %%i in ('aart -b') do set output=%%i
+for /F "delims=" %%i in ('aart -e') do set output=%%i
 echo %output%
 echo ---------------
 echo.
