@@ -11,19 +11,16 @@ enable_testing()
 
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/modules/")
 
-include (CheckIncludeFileCxx)
+include(CheckIncludeFileCXX)
 
 # The version number.
-set (CPR_VERSION_MAJOR 1)
-set (CPR_VERSION_MINOR 0)
+set(ASCII-ARTINATOR_VERSION_MAJOR 1)
+set(ASCII-ARTINATOR_VERSION_MINOR 0)
 
-#leaving this in for now while code is in development
-#enables debug flags
-SET(CMAKE_BUILD_TYPE relwithdebinfo)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} --std=gnu++11 -Wall -pthread")
 
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} --std=gnu++11 -Wall -g -pthread")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -g2")
 
 check_include_file_cxx(memory HAVE_MEMORY)
 
