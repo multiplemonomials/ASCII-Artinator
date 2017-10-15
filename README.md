@@ -10,7 +10,7 @@ Just run the `aart` command, providing input and output filenames.
 
 #### Full Usage: 
 ```
-aart.exe [-v|--verbose] [-d|--debug] [-n|--noScaling] [-i|--invert] [-e|--version] [-a|--asciiOnly] [-f|--force] [-h|--help] [-b|--blockSize=<n>] [-c|--font=[font]] <input> <output>
+aart [-v|--verbose] [-d|--debug] [-n|--noScaling] [-i|--invert] [-e|--version] [-a|--asciiOnly] [-f|--force] [-h|--help] [-b|--blockSize=<n>] [-c|--font=[font]] <input> <output>
 -v, --verbose             enable verbose (basically progress) output
 -d, --debug               enable debug output for development
 -n, --noScaling           disable scaling the darkest character to near-black
@@ -32,4 +32,4 @@ You will need a few supporting libraries:
 libargtable2, freetype, libpng, and libpng++.
 
 ## Builds by Me 
-download [here](https://app.box.com/shared/static/b3o0v9lr70x0t8yvelk6t27pabmjftf8.zip)
+Win32: download [here](https://app.box.com/shared/static/b3o0v9lr70x0t8yvelk6t27pabmjftf8.zip)
